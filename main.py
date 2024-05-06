@@ -1,41 +1,66 @@
-import pymongo
 from pymongo import MongoClient
-import random
 
-# З'єднання з MongoDB
-client = MongoClient("mongodb+srv://Artem:artemovich@cluster0.6zltqqd.mongodb.net/?retryWrites=true&w=majority&appName=Cluster0")
-db = client['test_database']
+# Підключення до MongoDB
+client = MongoClient('localhost', 27017)
+db = client['lb5']  # Назва вашої бази даних
 
-# Створення колекцій
+# Створення зразка даних
 collection1 = db['collection1']
 collection2 = db['collection2']
 
-# Функція для створення випадкового _id
-def generate_random_id():
-    return random.randint(1001, 2000)  # випадкове _id після 1000
+# Вставка даних у колекцію №1
+collection1.insert_many([
+    {"_id": 1, "name": "Alice", "friend": 101},
+    {"_id": 2, "name": "Bob", "friend": 102},
+    {"_id": 3, "name": "Charlie", "friend": 103},
+    {"_id": 4, "name": "David", "friend": 104},
+    {"_id": 5, "name": "Emma", "friend": 105},
+])
 
-# Створення записів у першій колекції з посиланнями на документи у другій колекції
-for i in range(2000):
-    document = {
-        '_id': i + 1,  # починаючи з 1
-        'counter': i,
-        'name': f'name_{i}'  # поле name
-    }
-    # Випадкове _id документа з другої колекції
-    if i >= 999:  # вставляємо випадкові _id після 1000 елемента
-        document['ref_id'] = generate_random_id()
-    collection1.insert_one(document)
+# Вставка даних у колекцію №2
+collection2.insert_many([
+    {"_id": 101, "details": "Details of friend 101"},
+    {"_id": 102, "details": "Details of friend 102"},
+    {"_id": 103, "details": "Details of friend 103"},
+    {"_id": 104, "details": "Details of friend 104"},
+    {"_id": 105, "details": "Details of friend 105"},
+])
 
-# Створення записів у другій колекції з посиланнями на документи у першій колекції
-for i in range(2000):
-    document = {
-        '_id': i + 1001,  # починаючи з 1001
-        'counter': i,
-        'name': f'name_{i}'  # поле name
-    }
-    # Випадкове _id документа з першої колекції
-    if i >= 999:  # вставляємо випадкові _id після 1000 елемента
-        document['ref_id'] = random.randint(1, 1000)  # випадкове _id з першої колекції
-    collection2.insert_one(document)
+# Параметри N, M та MAXK
+N = 6
+M = 8
+MAXK = 10
 
-print("Колекції створені успішно.")
+
+# Функція для побудови ланцюжка документів
+def build_chain(start_doc):
+    chain = [start_doc]
+    current_doc = start_doc
+    chain_length = 0
+
+    while current_doc.get('friend') and chain_length < MAXK:
+        next_doc = collection2.find_one({'_id': current_doc['friend']})
+        if next_doc:
+            chain.append(next_doc)
+            current_doc = next_doc
+            chain_length += 1
+        else:
+            break
+
+    return chain
+
+
+# Запит для виведення перших N записів колекції №1
+cursor1 = collection1.find().limit(N)
+
+# Запит для виведення перших M записів колекції №2
+cursor2 = collection2.find().limit(M)
+
+# Виведення результатів
+print(f"N = {N}, M = {M}")
+
+for doc1 in cursor1:
+    chain = build_chain(doc1)
+    print("\nChain starting with document from collection1:")
+    for doc in chain:
+        print(doc)
