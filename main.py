@@ -3,7 +3,7 @@ from pymongo import MongoClient
 import random
 
 # З'єднання з MongoDB
-client = MongoClient('localhost', 27017)
+client = MongoClient("mongodb+srv://Artem:artemovich@cluster0.6zltqqd.mongodb.net/?retryWrites=true&w=majority&appName=Cluster0")
 db = client['test_database']
 
 # Створення колекцій
