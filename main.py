@@ -1,7 +1,7 @@
 from pymongo import MongoClient
 
 # Підключення до MongoDB
-client = MongoClient('localhost', 27017)
+client = MongoClient("mongodb+srv://Artem:artemovich@cluster0.6zltqqd.mongodb.net/?retryWrites=true&w=majority&appName=Cluster0")
 db = client['lb5']  # Назва вашої бази даних
 
 # Створення зразка даних
